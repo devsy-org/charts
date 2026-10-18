@@ -1,3 +1,6 @@
+{{- if gt (int .Values.replicaCount) 1 }}
+{{- fail "replicaCount must be 1 or less: the bundled database cannot run in more than one pod" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

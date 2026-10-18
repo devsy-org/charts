@@ -44,7 +44,7 @@ Full documentation is in `charts/platform/values.yaml`.
 | `env.DISABLE_DEVSY_ROUTER` | `""` | Rendered as env when non-empty. Use `--set-string`. |
 | `env.DEVSY_HOST` | `""` | Rendered as env when non-empty. |
 | `env.DEVSY_SUBDOMAIN` | `""` | Rendered as env when non-empty. |
-| `replicaCount` | `1` | Keep at 1 (RWO volume, Recreate strategy). |
+| `replicaCount` | `1` | Must be 1 or less; rendering fails otherwise (RWO volume, bundled database). |
 | `service.type` | `ClusterIP` | Service type. |
 | `service.port` | `80` | Service port (unverified). |
 | `service.containerPort` | `80` | Container port (unverified). |
@@ -52,7 +52,7 @@ Full documentation is in `charts/platform/values.yaml`.
 | `ingress.host` | `""` | Platform host, e.g. `platform.example.com`. |
 | `ingress.className` | `""` | IngressClass name. |
 | `ingress.annotations` | `{}` | Ingress annotations. |
-| `ingress.tls` | `[]` | Ingress TLS entries. |
+| `ingress.tls` | `[]` | Ingress TLS entries. When empty, NOTES prints `http://` (external TLS termination is not detected). |
 | `devsyIngress.enabled` | `false` | Second Ingress for workspace subdomains, same backend. Requires `devsyIngress.host`. |
 | `devsyIngress.host` | `""` | Wildcard host, e.g. `*.example.com`. |
 | `devsyIngress.className` | `""` | IngressClass name. |

@@ -5,7 +5,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ printf "%s-workspaces" (include "platform.fullname" .) | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-workspaces" (include "platform.fullname" . | trunc 52 | trimSuffix "-") }}
   labels:
     {{- include "platform.labels" . | nindent 4 }}
   {{- with .Values.devsyIngress.annotations }}

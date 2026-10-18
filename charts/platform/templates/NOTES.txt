@@ -2,7 +2,7 @@ Devsy Platform release "{{ .Release.Name }}" is deployed to namespace "{{ .Relea
 
 {{- if .Values.ingress.enabled }}
 
-Platform URL: https://{{ .Values.ingress.host }}
+Platform URL: {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
 {{- else }}
 
 No Ingress is configured. To reach the service locally:
