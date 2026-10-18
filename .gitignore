@@ -1,0 +1,4 @@
+*.tgz
+dist/
+rendered-*.yaml
+.DS_Store
