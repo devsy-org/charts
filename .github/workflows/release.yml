@@ -1,0 +1,58 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "platform-v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-platform:
+    name: publish platform chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.22.1
+
+      - name: Verify tag matches chart version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${TAG#platform-v}"
+          CHART_VERSION="$(helm show chart charts/platform | sed -n 's/^version: //p')"
+          if [ "${TAG_VERSION}" != "${CHART_VERSION}" ]; then
+            echo "tag version ${TAG_VERSION} does not match Chart.yaml version ${CHART_VERSION}" >&2
+            exit 1
+          fi
+          echo "CHART_VERSION=${CHART_VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Lint and package chart
+        run: |
+          set -euo pipefail
+          helm lint charts/platform --strict
+          helm package charts/platform --destination dist
+          test -f "dist/platform-${CHART_VERSION}.tgz"
+
+      - name: Push chart to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          echo "${GITHUB_TOKEN}" | helm registry login ghcr.io --username "${ACTOR}" --password-stdin
+          helm push "dist/platform-${CHART_VERSION}.tgz" oci://ghcr.io/devsy-org/charts
+
+      - name: Log out of GHCR
+        if: always()
+        run: helm registry logout ghcr.io
