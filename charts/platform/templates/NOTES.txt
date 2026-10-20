@@ -1,0 +1,28 @@
+Devsy Platform release "{{ .Release.Name }}" is deployed to namespace "{{ .Release.Namespace }}".
+
+{{- if .Values.ingress.enabled }}
+
+Platform URL: {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+
+No Ingress is configured. To reach the service locally:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "platform.fullname" . }} 8080:{{ .Values.service.port }}
+
+  then open http://localhost:8080
+{{- end }}
+{{- if .Values.devsyIngress.enabled }}
+
+Workspace subdomains: {{ .Values.devsyIngress.host }}
+{{- end }}
+{{- if not .Values.persistence.enabled }}
+
+WARNING: persistence is disabled. Database data is stored in an emptyDir and is lost when the pod is replaced.
+{{- end }}
+{{- if not .Values.admin.password }}
+
+NOTE: admin.password is empty. No ADMIN_PASSWORD is injected into the container.
+{{- end }}
+
+WARNING: the default image ({{ .Values.image.repository }}:{{ .Values.image.tag }}) is a transitional placeholder.
+It is published for arm64 only. Set image.repository and image.tag to the Devsy Platform server image when available.

@@ -1,0 +1,39 @@
+{{- if .Values.devsyIngress.enabled -}}
+{{- if not .Values.devsyIngress.host -}}
+{{- fail "devsyIngress.host is required when devsyIngress.enabled is true" -}}
+{{- end -}}
+{{- $platformName := include "platform.fullname" . -}}
+{{- $workspaceName := printf "%s-workspaces" ($platformName | trunc 52 | trimSuffix "-") -}}
+{{- if and .Values.ingress.enabled (eq $platformName $workspaceName) -}}
+{{- fail "ingress and devsyIngress names collide; choose a different fullnameOverride" -}}
+{{- end -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $workspaceName }}
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+  {{- with .Values.devsyIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.devsyIngress.className }}
+  ingressClassName: {{ .Values.devsyIngress.className | quote }}
+  {{- end }}
+  {{- with .Values.devsyIngress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.devsyIngress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "platform.fullname" . }}
+                port:
+                  name: http
+{{- end }}

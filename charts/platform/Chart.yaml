@@ -1,0 +1,9 @@
+apiVersion: v2
+name: platform
+description: Devsy Platform server (scaffold; default image is a transitional placeholder)
+type: application
+version: 0.1.0
+appVersion: "0.0.0"
+home: https://devsy.sh
+sources:
+  - https://github.com/devsy-org/charts

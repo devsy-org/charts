@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  chart:
+    name: platform chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.22.1
+
+      - name: Install kubeconform
+        env:
+          KUBECONFORM_VERSION: v0.8.0
+          KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+        run: |
+          set -euo pipefail
+          curl -fsSL -o kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  kubeconform.tar.gz" | sha256sum --check --strict -
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+
+      - name: Lint chart
+        run: helm lint charts/platform --strict
+
+      - name: Render chart with default values
+        run: helm template platform charts/platform --namespace devsy-platform > rendered-default.yaml
+
+      - name: Render chart with CLI contract values
+        run: |
+          helm template platform charts/platform --namespace devsy-platform \
+            --set ingress.enabled=true \
+            --set ingress.host=x.example.com \
+            --set devsyIngress.enabled=true \
+            --set devsyIngress.host='*.x.example.com' \
+            --set env.DEVSY_HOST=x.example.com \
+            --set-string env.DISABLE_DEVSY_ROUTER=true \
+            --set product=platform \
+            --set admin.password=secret > rendered-contract.yaml
+
+      - name: Validate rendered manifests against Kubernetes schemas
+        run: kubeconform -strict -summary -kubernetes-version 1.33.0 rendered-default.yaml rendered-contract.yaml

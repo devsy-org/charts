@@ -1,0 +1,143 @@
+# Default values for the platform chart.
+# Scaffold: the default image is a transitional placeholder (arm64 only).
+# Every value that is not verified against the server is marked "unverified".
+
+# Number of replicas. Keep at 1: the data volume is ReadWriteOnce and the
+# bundled database must not run in more than one pod.
+replicaCount: 1
+
+image:
+  # Image repository. Transitional placeholder, arm64 only (see README).
+  repository: ghcr.io/devsy-org/devsy-pro
+  # Image tag.
+  tag: latest
+  # Image pull policy.
+  pullPolicy: IfNotPresent
+
+# Image pull secrets for private registries.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Product name. Rendered as env PRODUCT on the container.
+# Unverified against the server.
+product: platform
+
+# Container command override. Empty = use the image ENTRYPOINT/CMD.
+command: []
+
+# Container args override. Empty = use the image CMD.
+args: []
+
+admin:
+  # Admin password. Empty = no ADMIN_PASSWORD is injected.
+  # When set, it is stored in a Secret and exposed to the container as env ADMIN_PASSWORD.
+  # Unverified against the server. Changing it does not restart pods; run
+  # `kubectl rollout restart deployment/<release>` after changing it.
+  password: ""
+
+# Extra container env. Each non-empty entry is rendered as an env var.
+# Use --set-string for values that look like booleans or numbers.
+env:
+  # Disables the devsy router. Unverified against the server.
+  DISABLE_DEVSY_ROUTER: ""
+  # Public host the server advertises. Unverified against the server.
+  DEVSY_HOST: ""
+  # Subdomain setting for workspaces. Unverified against the server.
+  DEVSY_SUBDOMAIN: ""
+
+serviceAccount:
+  # Create a ServiceAccount for the pod.
+  create: true
+  # Name of the ServiceAccount. Empty = fullname when create is true, else "default".
+  name: ""
+  # Annotations for the ServiceAccount.
+  annotations: {}
+
+podAnnotations: {}
+
+podLabels: {}
+
+# Pod security context. Runs as the image user (998) and fsGroup 998 so the
+# data volume is writable by the bundled database.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 998
+  fsGroup: 998
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context. Never privileged.
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  # Service type.
+  type: ClusterIP
+  # Service port. Unverified: the image does not declare its listening port.
+  port: 80
+  # Container port the server listens on. Unverified; must match the server.
+  containerPort: 80
+
+ingress:
+  # Create an Ingress for the platform host.
+  enabled: false
+  # Host for the platform. Required when enabled. Example: platform.example.com
+  host: ""
+  # IngressClass name. Empty = cluster default.
+  className: ""
+  # Annotations for the Ingress.
+  annotations: {}
+  # TLS entries, for example:
+  # - secretName: platform-tls
+  #   hosts:
+  #     - platform.example.com
+  tls: []
+
+devsyIngress:
+  # Create a second Ingress for workspace subdomains, routed to the same service.
+  enabled: false
+  # Wildcard host for workspace subdomains. Required when enabled. Example: "*.example.com"
+  host: ""
+  # IngressClass name. Empty = cluster default.
+  className: ""
+  # Annotations for the Ingress.
+  annotations: {}
+  # TLS entries, same shape as ingress.tls.
+  tls: []
+
+persistence:
+  # Create a PersistentVolumeClaim mounted at /var/lib/postgresql/data.
+  # When false, an emptyDir is used and database data is lost with the pod.
+  # Uninstalling the release deletes the PVC and its data.
+  enabled: true
+  # StorageClass name. Empty = cluster default.
+  storageClass: ""
+  # PVC access modes.
+  accessModes:
+    - ReadWriteOnce
+  # Requested volume size.
+  size: 10Gi
+
+resources: {}
+  # Example:
+  # requests:
+  #   cpu: 500m
+  #   memory: 1Gi
+
+# Liveness probe. Empty = no probe. The server health path is unverified.
+livenessProbe: {}
+
+# Readiness probe. Empty = no probe. The server health path is unverified.
+readinessProbe: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
